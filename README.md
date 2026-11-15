@@ -3,8 +3,8 @@
 Ежедневные упражнения для Senior Java-разработчика: concurrency, memory, algorithms,
 streams, internals, распределённые системы, продвинутая доменная логика, утренняя
 алгоритмическая разминка и короткие задачи на идиоматичный JCF/Stream API. В проекте
-**91 kata** в семи волнах: 31 основная задача, включая блок **Prod-Ready Craft**,
-**Morning Warm-Up** из 30 задач LeetCode и **Easy Kata** — 30 задач на функциональный
+**101 kata** в семи волнах: 31 основная задача, включая блок **Prod-Ready Craft**,
+**Morning Warm-Up** из 30 задач LeetCode и **Easy Kata** — 40 задач на функциональный
 стиль Java 21.
 
 Каждая kata — это **три файла**:
@@ -127,7 +127,17 @@ java-kata/
     │   │   ├── Easy27_TrieAutocompletePrefix.java
     │   │   ├── Easy28_DeduplicatePreservingLatest.java
     │   │   ├── Easy29_OptionalPipelineExtractor.java
-    │   │   └── Easy30_BusinessDaysCalculator.java
+    │   │   ├── Easy30_BusinessDaysCalculator.java
+    │   │   ├── Easy31_TimeZoneMeetingFinder.java
+    │   │   ├── Easy32_DurationHumanizer.java
+    │   │   ├── Easy33_RecursiveMenuFlattener.java
+    │   │   ├── Easy34_DeepMapDiff.java
+    │   │   ├── Easy35_CsvQueryFilter.java
+    │   │   ├── Easy36_FrequencyBucketCache.java
+    │   │   ├── Easy37_SafePaginationHelper.java
+    │   │   ├── Easy38_ExpressionRpnEvaluator.java
+    │   │   ├── Easy39_PriorityTaskScheduler.java
+    │   │   └── Easy40_MostFrequentUrlPrefix.java
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -161,7 +171,7 @@ java-kata/
     │       ├── prod/Kata30_PermissionBitmaskEvaluatorSolution.java
     │       ├── prod/Kata31_ResilientDataMapperSolution.java
     │       ├── warmup/week1 ... week4/              # 30 эталонов Warmup*Solution
-    │       └── easy/                                # 30 эталонов Easy*Solution
+    │       └── easy/                                # 40 эталонов Easy*Solution
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -196,7 +206,7 @@ java-kata/
         │   ├── prod/Kata30_PermissionBitmaskEvaluatorTest.java
         │   ├── prod/Kata31_ResilientDataMapperTest.java
         │   ├── warmup/week1 ... week4/              # 30 тестов Warmup*Test
-        │   ├── easy/                                # 30 тестов Easy*Test
+        │   ├── easy/                                # 40 тестов Easy*Test
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
@@ -377,8 +387,8 @@ mvn test-compile exec:java \
 
 ## Список задач
 
-В проекте **91 задача** (волны 1–7): 31 основная kata, 30 задач утренней разминки
-LeetCode и 30 коротких Easy Kata на JCF/Stream API.
+В проекте **101 задача** (волны 1–7): 31 основная kata, 30 задач утренней разминки
+LeetCode и 40 коротких Easy Kata на JCF/Stream API.
 
 | № | Kata | Тема | Ключевые навыки |
 |---|---|---|---|
@@ -414,7 +424,7 @@ LeetCode и 30 коротких Easy Kata на JCF/Stream API.
 | 30 | `Kata30_PermissionBitmaskEvaluator` | RBAC + ABAC | `EnumSet` как битовая маска, наследование ролей, DENY wins, условные правила, volatile-снимок без lock на чтении |
 | 31 | `Kata31_ResilientDataMapper` | Валидация импорта | Applicative `combine` с накоплением ошибок, короткозамыкающий `flatMap`, нормализация грязных данных |
 | 32–61 | `Warmup<Week>_<NN>_<Name>` | Morning Warm-Up | 30 задач LeetCode #1–#700: массивы, строки, биты, математика, связные списки, деревья; детальный трекер ниже |
-| 62–91 | `Easy01`–`Easy30` | Easy Kata | Идиоматичный JCF, Stream API, `Optional`, `java.time`, `Map.merge`/`computeIfAbsent`, `Comparator` chaining, `SequencedCollection`, Pattern Matching |
+| 62–101 | `Easy01`–`Easy40` | Easy Kata | Идиоматичный JCF, Stream API, `Optional`, `java.time`, `Map.merge`/`computeIfAbsent`, `Comparator` chaining, `SequencedCollection`, Pattern Matching |
 
 ### Prod-Ready Craft (Collections, Streams & Domain Logic)
 
@@ -502,9 +512,9 @@ mvn test -Dtest='Warmup1*' -DuseSolution=true
 | [ ] | `Warmup4_08_BinaryTreeInorderTraversal` | #94 | Итеративный in-order на `ArrayDeque` |
 | [ ] | `Warmup4_09_SearchInBst` | #700 | Итеративный спуск по BST, O(h) |
 
-### Easy Kata: JCF & Functional Style (`Easy01` — `Easy30`)
+### Easy Kata: JCF & Functional Style (`Easy01` — `Easy40`)
 
-30 коротких задач на 5–10 минут ежедневной практики идиоматичного Java Collections
+40 коротких задач на 5–10 минут ежедневной практики идиоматичного Java Collections
 Framework, Stream API, `Optional`, `java.time` и Pattern Matching. Пакет
 `dev.kata.easy`, эталоны — `dev.kata.solutions.easy`. Главное правило: вместо ручных
 циклов с мутацией индексов — `Stream`, `Map.merge`, `Map.computeIfAbsent`, `Collectors`,
@@ -547,6 +557,16 @@ mvn test -Dtest='Easy*' -DuseSolution=true
 | [ ] | `Easy28_DeduplicatePreservingLatest` | Дедупликация | `LinkedHashMap`/`SequencedMap.putLast`, последний payload |
 | [ ] | `Easy29_OptionalPipelineExtractor` | Email из nullable-структуры | Цепочка `Optional.map/filter` без null-check |
 | [ ] | `Easy30_BusinessDaysCalculator` | Рабочие дни | `Stream.iterate` по `LocalDate`, выходные и праздники |
+| [ ] | `Easy31_TimeZoneMeetingFinder` | Встреча в таймзонах | `IntStream.range(0,24)`, `withZoneSameInstant`, окно `[start,end)` |
+| [ ] | `Easy32_DurationHumanizer` | Человекочитаемая длительность | `Duration.toDaysPart/toHoursPart/toMinutesPart/toSecondsPart` |
+| [ ] | `Easy33_RecursiveMenuFlattener` | Плоское меню | Рекурсивный `Stream.flatMap`, `LinkedHashMap`, путь через `" / "` |
+| [ ] | `Easy34_DeepMapDiff` | Diff вложенных мап | Рекурсивное «сплющивание» листьев, точечная нотация, `<missing>` |
+| [ ] | `Easy35_CsvQueryFilter` | Фильтр и проекция | `Predicate`-фильтры, `LinkedHashMap` для порядка колонок |
+| [ ] | `Easy36_FrequencyBucketCache` | LFU-трекер | Частоты + монотонный номер доступа, `Comparator` tie-break |
+| [ ] | `Easy37_SafePaginationHelper` | Пагинация | `Math.ceilDiv`, `long`-смещение, пустая страница за границей |
+| [ ] | `Easy38_ExpressionRpnEvaluator` | RPN-калькулятор | `ArrayDeque`-стек + `Map<String, IntBinaryOperator>` |
+| [ ] | `Easy39_PriorityTaskScheduler` | Очередь задач | `PriorityQueue` и цепочка `Comparator` (priority, createdAt, id) |
+| [ ] | `Easy40_MostFrequentUrlPrefix` | URL-префиксы | Нормализация путей, `groupingBy(counting)`, топ-K по частоте |
 
 ### Таблица прогресса
 
@@ -590,7 +610,7 @@ mvn test -Dtest='Easy*' -DuseSolution=true
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
 >
 > Прогресс по 30 задачам утренней разминки отмечайте в отдельном
-> [трекере Morning Warm-Up](#morning-warm-up-wave-6) выше, а по 30 Easy Kata — в
+> [трекере Morning Warm-Up](#morning-warm-up-wave-6) выше, а по 40 Easy Kata — в
 > разделе Easy Kata выше.
 
 ---
