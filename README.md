@@ -1,0 +1,282 @@
+# java-kata
+
+Ежедневные упражнения для Senior Java-разработчика: concurrency, memory, algorithms,
+streams, internals и измерение производительности через JMH.
+
+Каждая kata — это **три файла**:
+
+1. **Заготовка** с подробным Javadoc, контрактом и методами, которые бросают
+   `UnsupportedOperationException("Not implemented yet")`.
+2. **Эталонное решение** с идиоматичной реализацией и разбором компромиссов.
+3. **Тесты** на JUnit 5 + AssertJ + Awaitility, покрывающие базовые сценарии, edge-cases и
+   многопоточную нагрузку.
+
+По умолчанию `mvn test` запускает тесты **против заготовок** — они падают, и это
+задумано. С флагом `-DuseSolution=true` те же тесты запускаются против эталона и должны
+быть зелёными.
+
+---
+
+## Требования
+
+| Инструмент | Версия |
+|---|---|
+| JDK | **21** (компиляция с `--enable-preview`) |
+| Maven | 3.9+ |
+
+> **Важно:** `mvn -version` должен показывать Java 21. Скомпилированные с
+> `--enable-preview` классы нельзя загрузить на другой версии JDK. Если Maven запускается
+> на JDK 27, укажите `JAVA_HOME` явно:
+>
+> ```bash
+> export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # macOS
+> # export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk     # Linux
+> ```
+
+---
+
+## Структура проекта
+
+```text
+java-kata/
+├── pom.xml
+├── README.md
+├── .gitignore
+└── src/
+    ├── main/java/dev/kata/
+    │   ├── concurrency/
+    │   │   ├── Kata01_StripedLockCache.java        # заготовка
+    │   │   └── Kata02_AsyncTaskBatcher.java
+    │   ├── patterns/
+    │   │   └── Kata03_TokenBucketRateLimiter.java
+    │   ├── algorithms/
+    │   │   └── Kata04_RingBuffer.java
+    │   ├── streams/
+    │   │   └── Kata05_CustomSpliterator.java
+    │   ├── memory/
+    │   │   └── Kata06_OffHeapByteBufferPool.java
+    │   ├── internals/
+    │   │   └── Kata07_MiniDependencyInjector.java
+    │   └── solutions/                              # эталоны, повторяют структуру пакетов
+    │       ├── concurrency/Kata01_StripedLockCacheSolution.java
+    │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
+    │       ├── patterns/Kata03_TokenBucketRateLimiterSolution.java
+    │       ├── algorithms/Kata04_RingBufferSolution.java
+    │       ├── streams/Kata05_CustomSpliteratorSolution.java
+    │       ├── memory/Kata06_OffHeapByteBufferPoolSolution.java
+    │       └── internals/Kata07_MiniDependencyInjectorSolution.java
+    └── test/
+        ├── java/dev/kata/
+        │   ├── concurrency/Kata01_StripedLockCacheTest.java
+        │   ├── concurrency/Kata02_AsyncTaskBatcherTest.java
+        │   ├── patterns/Kata03_TokenBucketRateLimiterTest.java
+        │   ├── algorithms/Kata04_RingBufferTest.java
+        │   ├── streams/Kata05_CustomSpliteratorTest.java
+        │   ├── memory/Kata06_OffHeapByteBufferPoolTest.java
+        │   ├── internals/Kata07_MiniDependencyInjectorTest.java
+        │   └── benchmarks/
+        │       ├── BenchmarkRunner.java
+        │       ├── RateLimiterBenchmark.java
+        │       ├── RingBufferBenchmark.java
+        │       └── StripedCacheBenchmark.java
+        └── resources/logback-test.xml
+```
+
+Эталонные решения **наследуются от заготовок** и переопределяют методы. Поэтому тест
+работает с одним типом `KataXX_<Name>`, а фабрика в тесте выбирает реализацию:
+
+```java
+private static final boolean USE_SOLUTION = Boolean.getBoolean("useSolution");
+
+private <K, V> Kata01_StripedLockCache<K, V> newCache(int stripes, long ttlMillis) {
+    return USE_SOLUTION
+            ? new Kata01_StripedLockCacheSolution<>(stripes, ttlMillis)
+            : new Kata01_StripedLockCache<>(stripes, ttlMillis);
+}
+```
+
+---
+
+## Шпаргалка по Maven-командам
+
+> В zsh/bash звёздочку в `-Dtest=...` нужно брать в кавычки, иначе shell раскроет её как
+> glob и Maven получит список файлов.
+
+### Тесты
+
+```bash
+# Все тесты против заготовок — ожидаемо падают с UnsupportedOperationException
+mvn test
+
+# Все тесты против эталонных решений — должны быть зелёными
+mvn test -DuseSolution=true
+
+# Одна kata против заготовки
+mvn test -Dtest='Kata01*'
+
+# Одна kata против эталона
+mvn test -Dtest='Kata01*' -DuseSolution=true
+
+# Несколько katas
+mvn test -Dtest='Kata0[1-3]*' -DuseSolution=true
+
+# Один конкретный тест-метод
+mvn test -Dtest='Kata01_StripedLockCacheTest#stampedeProtection' -DuseSolution=true
+```
+
+Surefire настроен на вывод статусов в консоль (`redirectTestOutputToFile=false`), поэтому
+видны имена тестов (`@DisplayName` на русском), количество запусков и стектрейсы.
+
+### Эталон и сброс задачи
+
+```bash
+# Посмотреть эталон
+cat src/main/java/dev/kata/concurrency/Kata01_StripedLockCacheSolution.java
+
+# Сбросить свою реализацию заготовки к исходному состоянию
+git checkout -- src/main/java/dev/kata/concurrency/Kata01_StripedLockCache.java
+
+# Сбросить сразу все заготовки
+git checkout -- src/main/java/dev/kata/
+```
+
+### Форматирование и покрытие
+
+```bash
+# Отформатировать код Google Java Format
+mvn spotless:apply
+
+# Только проверить форматирование (падает при нарушениях)
+mvn spotless:check
+
+# Полная проверка: тесты + spotless:check + отчёт JaCoCo
+mvn verify -DuseSolution=true
+
+# HTML-отчёт покрытия
+open target/site/jacoco/index.html
+```
+
+`spotless:check` привязан к фазе `verify`; `mvn test` его не запускает. JaCoCo-агент
+включается в `initialize`, отчёт генерируется на `verify`.
+
+---
+
+## JMH-бенчмарки
+
+Бенчмарки лежат в `src/test/java` и запускаются через `BenchmarkRunner` — **uber-jar не
+нужен**. Профиль учебный: `@Warmup(iterations = 2, time = 1)`,
+`@Measurement(iterations = 3, time = 1)`, `@Fork(1)`.
+
+```bash
+# Все бенчмарки против эталонов
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="" -DuseSolution=true
+
+# Только ring buffer (фильтр — подстрока имени)
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="RingBuffer" -DuseSolution=true
+
+# Rate limiter и striped cache
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="RateLimiter StripedCache" -DuseSolution=true
+```
+
+В IDE достаточно запустить `BenchmarkRunner#main` как обычное Java-приложение с VM-опцией
+`-DuseSolution=true`. `BenchmarkRunner` сам чинит classpath для `exec:java` (JMH строит
+команду форка из `java.class.path`, который Maven не обновляет) и пробрасывает
+`useSolution` в дочернюю JVM.
+
+### Что измеряют бенчмарки
+
+| Бенчмарк | Сценарий | Режимы |
+|---|---|---|
+| `RateLimiterBenchmark` | Token Bucket в 1 и 8 потоках | `Throughput`, `AverageTime` |
+| `RingBufferBenchmark` | SPSC ring buffer vs `ArrayBlockingQueue`, producer/consumer groups | `Throughput` |
+| `StripedCacheBenchmark` | lock-striped кэш vs `Collections.synchronizedMap`, 90% чтений / 10% записей, 8 потоков | `Throughput`, `AverageTime` |
+
+`BenchmarkRunner` подключает `GCProfiler`, поэтому в результатах есть
+`gc.alloc.rate.norm` — **байты на операцию**. Это ключевая метрика для katas про память:
+быстрая реализация, аллоцирующая 32 B/op, на длинной дистанции проиграет из-за GC.
+
+### Памятка по аннотациям JMH
+
+| Аннотация | Смысл |
+|---|---|
+| `@Benchmark` | Метод, который JMH измеряет. Возвращаемое значение JMH потребляет (blackhole). |
+| `@BenchmarkMode` | `Throughput` (ops/time), `AverageTime` (time/op), `SampleTime`, `SingleShotTime`, `All`. |
+| `@OutputTimeUnit` | Единица вывода: `NANOSECONDS`, `MICROSECONDS`, `MILLISECONDS`, `SECONDS`. |
+| `@Warmup(iterations, time)` | Прогрев до измерений: JIT-компиляция и стабилизация кэшей. |
+| `@Measurement(iterations, time)` | Собственно измерения; JMH показывает разброс и доверительный интервал. |
+| `@Fork(n)` | Сколько отдельных JVM запустить. Форк изолирует состояние и профилировщики. |
+| `@Threads(n)` | Число потоков. Можно ставить на класс или на метод. |
+| `@State(Scope)` | Объект состояния: `Benchmark` (общий), `Thread` (свой на поток), `Group` (общий на группу). |
+| `@Setup` / `@TearDown` | Подготовка/очистка на уровне `Trial`, `Iteration` или `Invocation`. |
+| `@Param` | Параметризация бенчмарка значениями; JMH прогонит все комбинации. |
+| `@Group` / `@GroupThreads` | Конкурентная «сцена» из нескольких методов; нужна для producer/consumer. |
+| `Blackhole` | Потребляет результат, чтобы JIT не выбросил полезную работу. |
+| `@CompilerControl` | Управление инлайнингом (`DONT_INLINE`, `INLINE`) для проверки гипотез. |
+| `-prof gc` / `GCProfiler` | Аллокации и время GC в байтах на операцию. |
+
+---
+
+## Список задач
+
+| № | Kata | Тема | Ключевые навыки |
+|---|---|---|---|
+| 01 | `Kata01_StripedLockCache` | Потокобезопасный кэш | Lock striping, `ReadWriteLock`, TTL на `nanoTime`, lazy expiration, cache stampede, `LongAdder` |
+| 02 | `Kata02_AsyncTaskBatcher` | Micro-batching | `CompletableFuture`, `ScheduledExecutorService`, гонки таймера и размера пачки, корректная обработка ошибок |
+| 03 | `Kata03_TokenBucketRateLimiter` | Rate limiting | Lock-free CAS, `AtomicReference`, token bucket, точность `nanoTime`, отсутствие записи при отказе |
+| 04 | `Kata04_RingBuffer` | SPSC ring buffer | `volatile`-индексы, happens-before, padding против false sharing, zero-allocation hot path |
+| 05 | `Kata05_CustomSpliterator` | Ленивые стримы | `Spliterator`, `trySplit`, `parallelStream`, ленивый парсинг, характеристики |
+| 06 | `Kata06_OffHeapByteBufferPool` | Off-heap память | `ByteBuffer.allocateDirect`, пул, `AutoCloseable`, `Cleaner`, защита от утечек и двойного возврата |
+| 07 | `Kata07_MiniDependencyInjector` | DI-контейнер | Reflection, `MethodHandles`, граф зависимостей, циклы, singleton/prototype, потокобезопасность |
+
+### Таблица прогресса
+
+Отмечайте выполненные задачи:
+
+| Kata | Заготовка прочитана | Реализация | Тесты зелёные (`-DuseSolution` не нужен) | Бенчмарк прогнан |
+|---|---|---|---|---|
+| 01 StripedLockCache | [ ] | [ ] | [ ] | [ ] |
+| 02 AsyncTaskBatcher | [ ] | [ ] | [ ] | — |
+| 03 TokenBucketRateLimiter | [ ] | [ ] | [ ] | [ ] |
+| 04 RingBuffer | [ ] | [ ] | [ ] | [ ] |
+| 05 CustomSpliterator | [ ] | [ ] | [ ] | — |
+| 06 OffHeapByteBufferPool | [ ] | [ ] | [ ] | — |
+| 07 MiniDependencyInjector | [ ] | [ ] | [ ] | — |
+
+> «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
+> `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
+
+---
+
+## Как работать с kata
+
+1. Прочитайте Javadoc заготовки: там контекст, требования, ограничения и edge-cases.
+2. Реализуйте методы в файле заготовки (не в `solutions/`).
+3. Запустите тесты kata: `mvn test -Dtest='KataXX*'`.
+4. Если тесты зелёные — сверьтесь с эталоном и разбором в `solutions/`.
+5. Прогоните бенчмарк, если он есть, и сравните с baseline.
+6. Сбросьте заготовку через `git checkout`, чтобы вернуться к упражнению позже.
+
+---
+
+## Диагностика
+
+| Симптом | Причина / решение |
+|---|---|
+| `UnsupportedOperationException: Not implemented yet` | Так и должно быть: запущены тесты против заготовки. Добавьте `-DuseSolution=true` для проверки эталона. |
+| `class file has wrong version` / `preview features are not enabled` | Maven работает не на JDK 21. Проверьте `mvn -version` и выставьте `JAVA_HOME`. |
+| `ClassNotFoundException: org.openjdk.jmh.runner.ForkedMain` | `exec:java` не обновил `java.class.path`. `BenchmarkRunner` уже исправляет это; убедитесь, что запускаете именно его. |
+| Бенчмарки падают с `UnsupportedOperationException` | Забыли `-DuseSolution=true` (или реализуйте заготовку). |
+| Долгий прогон JMH | Учебный профиль — ~10–20 с на бенчмарк. Для черновика уменьшите `iterations` в аннотациях. |
+| Тест с TTL «мигает» | TTL-тесты используют Awaitility с запасом; на перегруженной машине увеличьте `atMost(...)`. |
+
+---
+
+## Лицензия
+
+Учебный проект. Используйте свободно для практики и собеседований.
