@@ -46,11 +46,17 @@ java-kata/
     ├── main/java/dev/kata/
     │   ├── concurrency/
     │   │   ├── Kata01_StripedLockCache.java        # заготовка
-    │   │   └── Kata02_AsyncTaskBatcher.java
+    │   │   ├── Kata02_AsyncTaskBatcher.java
+    │   │   ├── Kata08_StructuredScatterGather.java
+    │   │   ├── Kata09_KeyedSequentialExecutor.java
+    │   │   └── Kata10_TreiberStack.java
     │   ├── patterns/
-    │   │   └── Kata03_TokenBucketRateLimiter.java
+    │   │   ├── Kata03_TokenBucketRateLimiter.java
+    │   │   ├── Kata11_CircuitBreaker.java
+    │   │   └── Kata12_ConsistentHashingRouter.java
     │   ├── algorithms/
-    │   │   └── Kata04_RingBuffer.java
+    │   │   ├── Kata04_RingBuffer.java
+    │   │   └── Kata13_BloomFilter.java
     │   ├── streams/
     │   │   └── Kata05_CustomSpliterator.java
     │   ├── memory/
@@ -60,8 +66,14 @@ java-kata/
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
+    │       ├── concurrency/Kata08_StructuredScatterGatherSolution.java
+    │       ├── concurrency/Kata09_KeyedSequentialExecutorSolution.java
+    │       ├── concurrency/Kata10_TreiberStackSolution.java
     │       ├── patterns/Kata03_TokenBucketRateLimiterSolution.java
+    │       ├── patterns/Kata11_CircuitBreakerSolution.java
+    │       ├── patterns/Kata12_ConsistentHashingRouterSolution.java
     │       ├── algorithms/Kata04_RingBufferSolution.java
+    │       ├── algorithms/Kata13_BloomFilterSolution.java
     │       ├── streams/Kata05_CustomSpliteratorSolution.java
     │       ├── memory/Kata06_OffHeapByteBufferPoolSolution.java
     │       └── internals/Kata07_MiniDependencyInjectorSolution.java
@@ -69,13 +81,20 @@ java-kata/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
         │   ├── concurrency/Kata02_AsyncTaskBatcherTest.java
+        │   ├── concurrency/Kata08_StructuredScatterGatherTest.java
+        │   ├── concurrency/Kata09_KeyedSequentialExecutorTest.java
+        │   ├── concurrency/Kata10_TreiberStackTest.java
         │   ├── patterns/Kata03_TokenBucketRateLimiterTest.java
+        │   ├── patterns/Kata11_CircuitBreakerTest.java
+        │   ├── patterns/Kata12_ConsistentHashingRouterTest.java
         │   ├── algorithms/Kata04_RingBufferTest.java
+        │   ├── algorithms/Kata13_BloomFilterTest.java
         │   ├── streams/Kata05_CustomSpliteratorTest.java
         │   ├── memory/Kata06_OffHeapByteBufferPoolTest.java
         │   ├── internals/Kata07_MiniDependencyInjectorTest.java
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
+        │       ├── ConsistentHashingBenchmark.java
         │       ├── RateLimiterBenchmark.java
         │       ├── RingBufferBenchmark.java
         │       └── StripedCacheBenchmark.java
@@ -182,6 +201,11 @@ mvn test-compile exec:java \
 mvn test-compile exec:java \
   -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
   -Dexec.args="RateLimiter StripedCache" -DuseSolution=true
+
+# Маршрутизация консистентного хеширования (Kata 12)
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="ConsistentHashing" -DuseSolution=true
 ```
 
 В IDE достаточно запустить `BenchmarkRunner#main` как обычное Java-приложение с VM-опцией
@@ -196,6 +220,7 @@ mvn test-compile exec:java \
 | `RateLimiterBenchmark` | Token Bucket в 1 и 8 потоках | `Throughput`, `AverageTime` |
 | `RingBufferBenchmark` | SPSC ring buffer vs `ArrayBlockingQueue`, producer/consumer groups | `Throughput` |
 | `StripedCacheBenchmark` | lock-striped кэш vs `Collections.synchronizedMap`, 90% чтений / 10% записей, 8 потоков | `Throughput`, `AverageTime` |
+| `ConsistentHashingBenchmark` | `route(key)` по кольцу (5 нод × 200 vnodes) vs modulo-baseline, 8 потоков, проверка нулевых аллокаций | `Throughput`, `AverageTime` |
 
 `BenchmarkRunner` подключает `GCProfiler`, поэтому в результатах есть
 `gc.alloc.rate.norm` — **байты на операцию**. Это ключевая метрика для katas про память:
@@ -233,6 +258,12 @@ mvn test-compile exec:java \
 | 05 | `Kata05_CustomSpliterator` | Ленивые стримы | `Spliterator`, `trySplit`, `parallelStream`, ленивый парсинг, характеристики |
 | 06 | `Kata06_OffHeapByteBufferPool` | Off-heap память | `ByteBuffer.allocateDirect`, пул, `AutoCloseable`, `Cleaner`, защита от утечек и двойного возврата |
 | 07 | `Kata07_MiniDependencyInjector` | DI-контейнер | Reflection, `MethodHandles`, граф зависимостей, циклы, singleton/prototype, потокобезопасность |
+| 08 | `Kata08_StructuredScatterGather` | Hedged requests | Виртуальные потоки, speculative retry, отмена/`interrupt`, агрегация ошибок, CAS на победителя |
+| 09 | `Kata09_KeyedSequentialExecutor` | Actor / partition consumer | FIFO по ключу, параллелизм разных ключей, `ConcurrentHashMap.compute`, безопасное удаление очередей, отсутствие утечек |
+| 10 | `Kata10_TreiberStack` | Lock-free стек | CAS-цикл, `AtomicStampedReference`, ABA-проблема, `LongAdder`, happens-before |
+| 11 | `Kata11_CircuitBreaker` | Отказоустойчивость | Кольцевое окно, три состояния, HALF_OPEN-гейт, инъекция часов, конкурентные переходы |
+| 12 | `Kata12_ConsistentHashingRouter` | Шардирование | Кольцо и виртуальные ноды, FNV-1a/MurmurHash3, copy-on-write снимок, минимизация миграции, zero-allocation hot path |
+| 13 | `Kata13_BloomFilter` | Вероятностные структуры | Расчёт `m`/`k`, Kirsch–Mitzenmacher, битовая упаковка в `long[]`, контроль false positive rate |
 
 ### Таблица прогресса
 
@@ -247,6 +278,12 @@ mvn test-compile exec:java \
 | 05 CustomSpliterator | [ ] | [ ] | [ ] | — |
 | 06 OffHeapByteBufferPool | [ ] | [ ] | [ ] | — |
 | 07 MiniDependencyInjector | [ ] | [ ] | [ ] | — |
+| 08 StructuredScatterGather | [ ] | [ ] | [ ] | — |
+| 09 KeyedSequentialExecutor | [ ] | [ ] | [ ] | — |
+| 10 TreiberStack | [ ] | [ ] | [ ] | — |
+| 11 CircuitBreaker | [ ] | [ ] | [ ] | — |
+| 12 ConsistentHashingRouter | [ ] | [ ] | [ ] | [ ] |
+| 13 BloomFilter | [ ] | [ ] | [ ] | — |
 
 > «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
