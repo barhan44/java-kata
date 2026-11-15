@@ -1,7 +1,9 @@
 # java-kata
 
 Ежедневные упражнения для Senior Java-разработчика: concurrency, memory, algorithms,
-streams, internals и измерение производительности через JMH.
+streams, internals, распределённые системы и продвинутая доменная логика. В проекте
+**31 kata** в пяти волнах, включая блок **Prod-Ready Craft** (Collections, Streams &
+Domain Logic).
 
 Каждая kata — это **три файла**:
 
@@ -78,6 +80,13 @@ java-kata/
     │   │   └── Kata24_OrSetCrdt.java
     │   ├── networking/
     │   │   └── Kata25_NioReactorEchoServer.java
+    │   ├── prod/
+    │   │   ├── Kata26_LedgerReconciliation.java
+    │   │   ├── Kata27_IntervalScheduleMerger.java
+    │   │   ├── Kata28_StreamAnalyticsPipeline.java
+    │   │   ├── Kata29_HierarchicalTreeBuilder.java
+    │   │   ├── Kata30_PermissionBitmaskEvaluator.java
+    │   │   └── Kata31_ResilientDataMapper.java
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -103,7 +112,13 @@ java-kata/
     │       ├── distributed/Kata22_RaftLeaderElectionSolution.java
     │       ├── distributed/Kata23_HybridLogicalClockSolution.java
     │       ├── distributed/Kata24_OrSetCrdtSolution.java
-    │       └── networking/Kata25_NioReactorEchoServerSolution.java
+    │       ├── networking/Kata25_NioReactorEchoServerSolution.java
+    │       ├── prod/Kata26_LedgerReconciliationSolution.java
+    │       ├── prod/Kata27_IntervalScheduleMergerSolution.java
+    │       ├── prod/Kata28_StreamAnalyticsPipelineSolution.java
+    │       ├── prod/Kata29_HierarchicalTreeBuilderSolution.java
+    │       ├── prod/Kata30_PermissionBitmaskEvaluatorSolution.java
+    │       └── prod/Kata31_ResilientDataMapperSolution.java
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -131,6 +146,12 @@ java-kata/
         │   ├── distributed/Kata23_HybridLogicalClockTest.java
         │   ├── distributed/Kata24_OrSetCrdtTest.java
         │   ├── networking/Kata25_NioReactorEchoServerTest.java
+        │   ├── prod/Kata26_LedgerReconciliationTest.java
+        │   ├── prod/Kata27_IntervalScheduleMergerTest.java
+        │   ├── prod/Kata28_StreamAnalyticsPipelineTest.java
+        │   ├── prod/Kata29_HierarchicalTreeBuilderTest.java
+        │   ├── prod/Kata30_PermissionBitmaskEvaluatorTest.java
+        │   ├── prod/Kata31_ResilientDataMapperTest.java
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
@@ -302,7 +323,7 @@ mvn test-compile exec:java \
 
 ## Список задач
 
-В проекте **25 задач** (волны 1–4).
+В проекте **31 задача** (волны 1–5).
 
 | № | Kata | Тема | Ключевые навыки |
 |---|---|---|---|
@@ -331,6 +352,33 @@ mvn test-compile exec:java \
 | 23 | `Kata23_HybridLogicalClock` | Распределённое время | HLC, логический счётчик, clock skew, 48/16-битная упаковка, zero-allocation |
 | 24 | `Kata24_OrSetCrdt` | CRDT | OR-Set, уникальные теги, Add-Wins, коммутативность/ассоциативность/идемпотентность |
 | 25 | `Kata25_NioReactorEchoServer` | Сетевой event loop | `Selector`, non-blocking I/O, framing, `OP_WRITE` backpressure, graceful close |
+| 26 | `Kata26_LedgerReconciliation` | Сверка платежей | `BigDecimal.compareTo`, валюты, `maxTimeDrift`, grace period, четыре категории расхождений за O(N+M) |
+| 27 | `Kata27_IntervalScheduleMerger` | Расписание занятости | `TreeMap<Instant, Instant>`, floor/ceiling, слияние/разрезание интервалов, поиск свободных окон |
+| 28 | `Kata28_StreamAnalyticsPipeline` | Аналитика заказов | `Collectors.teeing`, `groupingBy`/`flatMapping`/`filtering`, один проход, топ-3 без ничьих-неоднозначностей |
+| 29 | `Kata29_HierarchicalTreeBuilder` | Дерево из плоского списка | Итеративное построение леса, сортировка уровней, сироты, циклы с путём, глубина 100 000 без переполнения стека |
+| 30 | `Kata30_PermissionBitmaskEvaluator` | RBAC + ABAC | `EnumSet` как битовая маска, наследование ролей, DENY wins, условные правила, volatile-снимок без lock на чтении |
+| 31 | `Kata31_ResilientDataMapper` | Валидация импорта | Applicative `combine` с накоплением ошибок, короткозамыкающий `flatMap`, нормализация грязных данных |
+
+### Prod-Ready Craft (Collections, Streams & Domain Logic)
+
+Волна 5 (**Kata26–Kata31**) — это прикладная логика, максимально близкая к продакшену.
+Здесь нет экзотических структур: только `java.util`, Stream API, `java.time`, records и
+pattern matching из JDK 21. Ценность — в корректной семантике:
+
+- **Kata26** сравнивает деньги через `BigDecimal.compareTo` (а не `equals`), учитывает
+  `maxTimeDrift` и не объявляет свежие операции пропавшими раньше grace period.
+- **Kata27** держит занятость в `TreeMap` и поддерживает инвариант «отсортировано,
+  не пересекается, не смежно», поэтому `book`/`cancel` работают через `floorEntry`/
+  `ceilingEntry`, а не перебором.
+- **Kata28** собирает три независимых агрегата за один терминальный `collect` с
+  вложенным `Collectors.teeing`; ничьи в топе разрешаются по `productId`, пустой поток
+  не даёт `NaN`.
+- **Kata29** строит лес из плоского списка итеративно: дубликаты id, сироты и циклы
+  диагностируются с понятными исключениями, а не `StackOverflowError`.
+- **Kata30** моделирует права как `EnumSet`-битмаску, наследует роли с защитой от циклов
+  и публикует неизменяемый снимок через `volatile`; `DENY` побеждает всегда.
+- **Kata31** разделяет applicative-проверки (все ошибки сразу) и monadic-зависимости
+  (`flatMap` короткозамыкает), возвращая ошибки значениями, а не исключениями.
 
 ### Таблица прогресса
 
@@ -363,6 +411,12 @@ mvn test-compile exec:java \
 | 23 HybridLogicalClock | [ ] | [ ] | [ ] | [ ] |
 | 24 OrSetCrdt | [ ] | [ ] | [ ] | — |
 | 25 NioReactorEchoServer | [ ] | [ ] | [ ] | — |
+| 26 LedgerReconciliation | [ ] | [ ] | [ ] | — |
+| 27 IntervalScheduleMerger | [ ] | [ ] | [ ] | — |
+| 28 StreamAnalyticsPipeline | [ ] | [ ] | [ ] | — |
+| 29 HierarchicalTreeBuilder | [ ] | [ ] | [ ] | — |
+| 30 PermissionBitmaskEvaluator | [ ] | [ ] | [ ] | — |
+| 31 ResilientDataMapper | [ ] | [ ] | [ ] | — |
 
 > «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
