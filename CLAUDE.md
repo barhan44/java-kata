@@ -1,7 +1,7 @@
 # CLAUDE.md — Инструкции для проекта `java-kata`
 
 ## О проекте
-`java-kata` — набор практических ежедневных упражнений (katas) уровня Senior/Principal Java Engineer на чистом JDK 21 (с `--enable-preview`) без тяжелых фреймворков. В проекте 31 задача в пяти волнах: concurrency, memory, storage, distributed systems, networking и prod-ready domain logic.
+`java-kata` — набор практических ежедневных упражнений (katas) уровня Senior/Principal Java Engineer на чистом JDK 21 (с `--enable-preview`) без тяжелых фреймворков. В проекте 61 задача в шести волнах: 31 основная kata (concurrency, memory, storage, distributed systems, networking, prod-ready domain logic) и 30 задач утренней алгоритмической разминки LeetCode.
 
 ## Архитектурные стандарты (обязательно для всех новых задач)
 1. **Структура одной каты (строго 3 файла):**
@@ -33,10 +33,34 @@
 - конкурентность — copy-on-write снимок + `volatile`, чтение без lock;
 - тесты обязаны покрывать пустые входы, границы, порядок ошибок и иммутабельность возвращаемых коллекций.
 
+## Morning Warm-Up (Wave 6)
+30 задач LeetCode (#1–#700), разбитые на 4 недели по 7/7/7/9. Это ежедневная разминка перед основной работой: короткие задачи, но с обязательным разбором сложности и идиоматичным JDK-решением.
+
+**Раскладка и именование:**
+- заготовка — `src/main/java/dev/kata/warmup/weekN/Warmup<N>_<NN>_<Name>.java`;
+- эталон — `src/main/java/dev/kata/solutions/warmup/weekN/Warmup<N>_<NN>_<Name>Solution.java`;
+- тест — `src/test/java/dev/kata/warmup/weekN/Warmup<N>_<NN>_<Name>Test.java`;
+- общие структуры — `dev.kata.warmup.common.ListNode` и `dev.kata.warmup.common.TreeNode`; тесты используют `ListNode.of(...)`/`toList()` и `TreeNode.of(...)`/`TreeNode.toList(...)` вместо ручного связывания узлов.
+
+**Требования к Javadoc заготовки:** номер задачи LeetCode, условие на русском, примеры входа/выхода, ограничения, целевая сложность по времени и памяти (Big-O), ключевая идея решения.
+
+**Требования к эталону:** именно идиоматичный приём из условия, а не «работающий перебор»:
+- Бойер-Мур для majority, Флойд для happy number и цикла в списке;
+- `n & (n - 1)` для веса Хэмминга, XOR для single/missing number, `>>>` для reverse bits;
+- `switch` expression для FizzBuzz и римских цифр, `IntStream.rangeClosed` для FizzBuzz;
+- KMP/LPS для поиска подстроки, два указателя без аллокаций для строк и массивов;
+- dummy-узел для слияния списков, `ArrayDeque` вместо `Stack` для итеративного in-order;
+- O(1) памяти там, где это требуется (move zeroes, merge sorted array, climbing stairs, Floyd).
+
+**Тесты:** LeetCode-примеры, границы (пустой вход, один элемент, дубликаты, отрицательные значения, границы `int`), проверка in-place мутации и возвращаемых поддеревьев. Для циклических списков тест обязан строить реальный цикл, а не имитировать его флагом.
+
+Проверка недели: `mvn test -Dtest='Warmup1*' -DuseSolution=true`. Прогресс отмечается чекбоксами в README-трекере на 4 недели.
+
 ## Команды сборки и проверки
 - Проверка всех эталонных решений: `mvn test -DuseSolution=true`
 - Проверка конкретной каты (эталон): `mvn test -Dtest=Kata08* -DuseSolution=true`
 - Проверка конкретной каты (заготовка): `mvn test -Dtest=Kata08*`
+- Проверка недели разминки: `mvn test -Dtest='Warmup1*' -DuseSolution=true`
 - Форматирование кода: `mvn spotless:apply`
 - Запуск JMH-бенчмарка: `mvn test-compile exec:java -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" -Dexec.args="<BenchmarkName>"`
 

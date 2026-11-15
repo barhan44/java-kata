@@ -1,9 +1,10 @@
 # java-kata
 
 Ежедневные упражнения для Senior Java-разработчика: concurrency, memory, algorithms,
-streams, internals, распределённые системы и продвинутая доменная логика. В проекте
-**31 kata** в пяти волнах, включая блок **Prod-Ready Craft** (Collections, Streams &
-Domain Logic).
+streams, internals, распределённые системы, продвинутая доменная логика и утренняя
+алгоритмическая разминка. В проекте **61 kata** в шести волнах: 31 основная задача,
+включая блок **Prod-Ready Craft** (Collections, Streams & Domain Logic), и
+**Morning Warm-Up** — 30 задач LeetCode на 4 недели.
 
 Каждая kata — это **три файла**:
 
@@ -87,6 +88,14 @@ java-kata/
     │   │   ├── Kata29_HierarchicalTreeBuilder.java
     │   │   ├── Kata30_PermissionBitmaskEvaluator.java
     │   │   └── Kata31_ResilientDataMapper.java
+    │   ├── warmup/
+    │   │   ├── common/
+    │   │   │   ├── ListNode.java                   # фабрика of() и toList()
+    │   │   │   └── TreeNode.java                   # LeetCode level-order of()
+    │   │   ├── week1/                              # Warmup1_01 ... Warmup1_07
+    │   │   ├── week2/                              # Warmup2_01 ... Warmup2_07
+    │   │   ├── week3/                              # Warmup3_01 ... Warmup3_07
+    │   │   └── week4/                              # Warmup4_01 ... Warmup4_09
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -118,7 +127,8 @@ java-kata/
     │       ├── prod/Kata28_StreamAnalyticsPipelineSolution.java
     │       ├── prod/Kata29_HierarchicalTreeBuilderSolution.java
     │       ├── prod/Kata30_PermissionBitmaskEvaluatorSolution.java
-    │       └── prod/Kata31_ResilientDataMapperSolution.java
+    │       ├── prod/Kata31_ResilientDataMapperSolution.java
+    │       └── warmup/week1 ... week4/              # 30 эталонов Warmup*Solution
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -152,6 +162,7 @@ java-kata/
         │   ├── prod/Kata29_HierarchicalTreeBuilderTest.java
         │   ├── prod/Kata30_PermissionBitmaskEvaluatorTest.java
         │   ├── prod/Kata31_ResilientDataMapperTest.java
+        │   ├── warmup/week1 ... week4/              # 30 тестов Warmup*Test
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
@@ -203,6 +214,12 @@ mvn test -Dtest='Kata0[1-3]*' -DuseSolution=true
 
 # Один конкретный тест-метод
 mvn test -Dtest='Kata01_StripedLockCacheTest#stampedeProtection' -DuseSolution=true
+
+# Утренняя разминка: одна неделя, эталон
+mvn test -Dtest='Warmup1*' -DuseSolution=true
+
+# Все четыре недели разминки
+mvn test -Dtest='Warmup*' -DuseSolution=true
 ```
 
 Surefire настроен на вывод статусов в консоль (`redirectTestOutputToFile=false`), поэтому
@@ -323,7 +340,8 @@ mvn test-compile exec:java \
 
 ## Список задач
 
-В проекте **31 задача** (волны 1–5).
+В проекте **61 задача** (волны 1–6): 31 основная kata и 30 задач утренней разминки
+LeetCode.
 
 | № | Kata | Тема | Ключевые навыки |
 |---|---|---|---|
@@ -358,6 +376,7 @@ mvn test-compile exec:java \
 | 29 | `Kata29_HierarchicalTreeBuilder` | Дерево из плоского списка | Итеративное построение леса, сортировка уровней, сироты, циклы с путём, глубина 100 000 без переполнения стека |
 | 30 | `Kata30_PermissionBitmaskEvaluator` | RBAC + ABAC | `EnumSet` как битовая маска, наследование ролей, DENY wins, условные правила, volatile-снимок без lock на чтении |
 | 31 | `Kata31_ResilientDataMapper` | Валидация импорта | Applicative `combine` с накоплением ошибок, короткозамыкающий `flatMap`, нормализация грязных данных |
+| 32–61 | `Warmup<Week>_<NN>_<Name>` | Morning Warm-Up | 30 задач LeetCode #1–#700: массивы, строки, биты, математика, связные списки, деревья; детальный трекер ниже |
 
 ### Prod-Ready Craft (Collections, Streams & Domain Logic)
 
@@ -379,6 +398,71 @@ pattern matching из JDK 21. Ценность — в корректной се�
   и публикует неизменяемый снимок через `volatile`; `DENY` побеждает всегда.
 - **Kata31** разделяет applicative-проверки (все ошибки сразу) и monadic-зависимости
   (`flatMap` короткозамыкает), возвращая ошибки значениями, а не исключениями.
+
+### Morning Warm-Up (Wave 6)
+
+30 задач LeetCode (#1–#700), разбитые на 4 недели. Каждая задача — стандартная тройка:
+заготовка `dev.kata.warmup.weekN.WarmupN_NN_Name`, эталон
+`dev.kata.solutions.warmup.weekN.WarmupN_NN_NameSolution` и тест. Общие структуры
+`ListNode` и `TreeNode` лежат в `dev.kata.warmup.common`.
+
+Проверка одной недели:
+
+```bash
+mvn test -Dtest='Warmup1*' -DuseSolution=true
+```
+
+Отмечайте `[x]`, когда ваша реализация проходит тесты **без** `-DuseSolution=true`.
+
+#### Неделя 1 — Массивы и указатели
+
+| ✓ | Kata | LeetCode | Ключевой приём |
+|---|---|---|---|
+| [ ] | `Warmup1_01_TwoSum` | #1 | `HashMap` «значение → индекс» за O(n), переполнение дополнения |
+| [ ] | `Warmup1_02_MoveZeroes` | #283 | Указатель записи, минимум записей, порядок сохраняется |
+| [ ] | `Warmup1_03_MergeSortedArray` | #88 | Слияние с конца in-place, три указателя |
+| [ ] | `Warmup1_04_BestTimeToBuyAndSellStock` | #121 | Минимальная цена слева, лучшая прибыль, O(1) памяти |
+| [ ] | `Warmup1_05_RemoveDuplicatesFromSortedArray` | #26 | Два указателя, сравнение с последним записанным |
+| [ ] | `Warmup1_06_MajorityElement` | #169 | Голосование Бойера-Мура, O(1) памяти |
+| [ ] | `Warmup1_07_ContainsDuplicate` | #217 | `HashSet` с ранним выходом |
+
+#### Неделя 2 — Строки и побитовые операции
+
+| ✓ | Kata | LeetCode | Ключевой приём |
+|---|---|---|---|
+| [ ] | `Warmup2_01_ValidPalindrome` | #125 | Два указателя, `isLetterOrDigit`, без новой строки |
+| [ ] | `Warmup2_02_ReverseString` | #344 | Swap с двух концов, O(1) памяти |
+| [ ] | `Warmup2_03_FindFirstOccurrence` | #28 | KMP и LPS-массив, O(n + m) без `indexOf` |
+| [ ] | `Warmup2_04_SingleNumber` | #136 | XOR всех элементов |
+| [ ] | `Warmup2_05_NumberOf1Bits` | #191 | `n & (n - 1)` сбрасывает младший бит |
+| [ ] | `Warmup2_06_ReverseBits` | #190 | 32 итерации, `>>>` для беззнакового сдвига |
+| [ ] | `Warmup2_07_ValidAnagram` | #242 | `int[26]` частот, один проход |
+
+#### Неделя 3 — Математика, логика и хеширование
+
+| ✓ | Kata | LeetCode | Ключевой приём |
+|---|---|---|---|
+| [ ] | `Warmup3_01_FizzBuzz` | #412 | `IntStream.rangeClosed` + `switch` expression |
+| [ ] | `Warmup3_02_HappyNumber` | #202 | Флойд (черепаха и заяц) без `HashSet` |
+| [ ] | `Warmup3_03_PalindromeNumber` | #9 | Разворот половины числа без `String` |
+| [ ] | `Warmup3_04_RomanToInteger` | #13 | `switch` expression, проход справа налево |
+| [ ] | `Warmup3_05_MissingNumber` | #268 | XOR индексов и значений без переполнения |
+| [ ] | `Warmup3_06_IsomorphicStrings` | #205 | Два массива последних позиций, двусторонний маппинг |
+| [ ] | `Warmup3_07_ClimbingStairs` | #70 | DP-Фибоначчи, O(1) памяти |
+
+#### Неделя 4 — Связные списки и деревья
+
+| ✓ | Kata | LeetCode | Ключевой приём |
+|---|---|---|---|
+| [ ] | `Warmup4_01_ReverseLinkedList` | #206 | Итеративный разворот; рекурсивный вариант в комментарии |
+| [ ] | `Warmup4_02_MergeTwoSortedLists` | #21 | Dummy-узел, переиспользование узлов |
+| [ ] | `Warmup4_03_LinkedListCycle` | #141 | Флойд; тесты строят реальные циклы |
+| [ ] | `Warmup4_04_MaximumDepthOfBinaryTree` | #104 | Рекурсия `1 + max(left, right)` |
+| [ ] | `Warmup4_05_InvertBinaryTree` | #226 | Зеркальная рекурсия, обмен детей |
+| [ ] | `Warmup4_06_SameTree` | #100 | Структурное сравнение с коротким замыканием |
+| [ ] | `Warmup4_07_SymmetricTree` | #101 | Зеркальные пары `left.left ↔ right.right` |
+| [ ] | `Warmup4_08_BinaryTreeInorderTraversal` | #94 | Итеративный in-order на `ArrayDeque` |
+| [ ] | `Warmup4_09_SearchInBst` | #700 | Итеративный спуск по BST, O(h) |
 
 ### Таблица прогресса
 
@@ -420,6 +504,9 @@ pattern matching из JDK 21. Ценность — в корректной се�
 
 > «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
+>
+> Прогресс по 30 задачам утренней разминки отмечайте в отдельном
+> [трекере Morning Warm-Up](#morning-warm-up-wave-6) выше.
 
 ---
 
