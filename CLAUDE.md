@@ -1,7 +1,7 @@
 # CLAUDE.md — Инструкции для проекта `java-kata`
 
 ## О проекте
-`java-kata` — набор практических ежедневных упражнений (katas) уровня Senior/Principal Java Engineer на чистом JDK 21 (с `--enable-preview`) без тяжелых фреймворков. В проекте 61 задача в шести волнах: 31 основная kata (concurrency, memory, storage, distributed systems, networking, prod-ready domain logic) и 30 задач утренней алгоритмической разминки LeetCode.
+`java-kata` — набор практических ежедневных упражнений (katas) уровня Senior/Principal Java Engineer на чистом JDK 21 (с `--enable-preview`) без тяжелых фреймворков. В проекте 71 задача в семи волнах: 31 основная kata (concurrency, memory, storage, distributed systems, networking, prod-ready domain logic), 30 задач утренней алгоритмической разминки LeetCode и 10 коротких Easy Kata на идиоматичный JCF/Stream API.
 
 ## Архитектурные стандарты (обязательно для всех новых задач)
 1. **Структура одной каты (строго 3 файла):**
@@ -56,11 +56,28 @@
 
 Проверка недели: `mvn test -Dtest='Warmup1*' -DuseSolution=true`. Прогресс отмечается чекбоксами в README-трекере на 4 недели.
 
+## Easy Kata: JCF & Functional Style (`Easy01` — `Easy10`)
+10 лаконичных задач для ежедневной 5–10-минутной практики идиоматичного Java Collections Framework, Stream API и Java 21 в декларативном стиле.
+
+**Раскладка:** заготовки — `src/main/java/dev/kata/easy/EasyNN_<Name>.java`, эталоны — `src/main/java/dev/kata/solutions/easy/EasyNN_<Name>Solution.java`, тесты — `src/test/java/dev/kata/easy/EasyNN_<Name>Test.java`. Именование сквозное: `Easy01`–`Easy10` без номеров волн.
+
+**Требования к эталонам:**
+- никакого «тяжёлого» императива: вместо ручных циклов с мутацией индексов — `Stream`, `Collectors`, `Map.merge`, `Map.computeIfAbsent`, цепочки `Comparator`, `ArrayDeque`, `SequencedCollection`/`SequencedSet`;
+- только базовый JCF: `ArrayList`, `HashMap`, `LinkedHashMap`, `HashSet`, `LinkedHashSet`, `ArrayDeque`;
+- декларативность и читаемость важнее микрооптимизаций; сложность всё равно указывается в Javadoc;
+- возвращаемые коллекции неизменяемы (`List.copyOf`, `Set.copyOf`, `toList()`, `unmodifiableMap`);
+- эталонные решения объясняют выбор структуры и приёма по-русски.
+
+**Задачи:** частоты и топ-K на `groupingBy/counting`; группировка сотрудников на `mapping`/`averagingInt`; diff коллекций через `Set` индексов; обратный индекс тегов через `flatMap`; слияние балансов через `Map.merge`; скобки на `ArrayDeque`; LRU на `LinkedHashMap(accessOrder=true)`; chunk/zip на `IntStream`; история на `SequencedSet.addFirst/removeLast`; многокритериальная сортировка цепочкой `Comparator`.
+
+Проверка: `mvn test -Dtest='Easy*' -DuseSolution=true`. Прогресс отмечается чекбоксами в README-разделе Easy Kata.
+
 ## Команды сборки и проверки
 - Проверка всех эталонных решений: `mvn test -DuseSolution=true`
 - Проверка конкретной каты (эталон): `mvn test -Dtest=Kata08* -DuseSolution=true`
 - Проверка конкретной каты (заготовка): `mvn test -Dtest=Kata08*`
 - Проверка недели разминки: `mvn test -Dtest='Warmup1*' -DuseSolution=true`
+- Проверка Easy Kata: `mvn test -Dtest='Easy*' -DuseSolution=true`
 - Форматирование кода: `mvn spotless:apply`
 - Запуск JMH-бенчмарка: `mvn test-compile exec:java -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" -Dexec.args="<BenchmarkName>"`
 

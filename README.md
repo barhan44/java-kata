@@ -1,10 +1,11 @@
 # java-kata
 
 Ежедневные упражнения для Senior Java-разработчика: concurrency, memory, algorithms,
-streams, internals, распределённые системы, продвинутая доменная логика и утренняя
-алгоритмическая разминка. В проекте **61 kata** в шести волнах: 31 основная задача,
-включая блок **Prod-Ready Craft** (Collections, Streams & Domain Logic), и
-**Morning Warm-Up** — 30 задач LeetCode на 4 недели.
+streams, internals, распределённые системы, продвинутая доменная логика, утренняя
+алгоритмическая разминка и короткие задачи на идиоматичный JCF/Stream API. В проекте
+**71 kata** в семи волнах: 31 основная задача, включая блок **Prod-Ready Craft**,
+**Morning Warm-Up** из 30 задач LeetCode и **Easy Kata** — 10 задач на функциональный
+стиль Java 21.
 
 Каждая kata — это **три файла**:
 
@@ -96,6 +97,17 @@ java-kata/
     │   │   ├── week2/                              # Warmup2_01 ... Warmup2_07
     │   │   ├── week3/                              # Warmup3_01 ... Warmup3_07
     │   │   └── week4/                              # Warmup4_01 ... Warmup4_09
+    │   ├── easy/
+    │   │   ├── Easy01_FrequencyAndTopK.java
+    │   │   ├── Easy02_GroupAndTransform.java
+    │   │   ├── Easy03_CollectionDiff.java
+    │   │   ├── Easy04_InvertedIndex.java
+    │   │   ├── Easy05_MapMergeAndRollup.java
+    │   │   ├── Easy06_BalancedBrackets.java
+    │   │   ├── Easy07_LruCacheWithLinkedHashMap.java
+    │   │   ├── Easy08_ChunkingAndWindowing.java
+    │   │   ├── Easy09_SequencedHistoryTracker.java
+    │   │   └── Easy10_MultiCriteriaSorting.java
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -128,7 +140,8 @@ java-kata/
     │       ├── prod/Kata29_HierarchicalTreeBuilderSolution.java
     │       ├── prod/Kata30_PermissionBitmaskEvaluatorSolution.java
     │       ├── prod/Kata31_ResilientDataMapperSolution.java
-    │       └── warmup/week1 ... week4/              # 30 эталонов Warmup*Solution
+    │       ├── warmup/week1 ... week4/              # 30 эталонов Warmup*Solution
+    │       └── easy/                                # 10 эталонов Easy*Solution
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -163,6 +176,7 @@ java-kata/
         │   ├── prod/Kata30_PermissionBitmaskEvaluatorTest.java
         │   ├── prod/Kata31_ResilientDataMapperTest.java
         │   ├── warmup/week1 ... week4/              # 30 тестов Warmup*Test
+        │   ├── easy/                                # 10 тестов Easy*Test
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
@@ -220,6 +234,9 @@ mvn test -Dtest='Warmup1*' -DuseSolution=true
 
 # Все четыре недели разминки
 mvn test -Dtest='Warmup*' -DuseSolution=true
+
+# Easy Kata: JCF и функциональный стиль
+mvn test -Dtest='Easy*' -DuseSolution=true
 ```
 
 Surefire настроен на вывод статусов в консоль (`redirectTestOutputToFile=false`), поэтому
@@ -340,8 +357,8 @@ mvn test-compile exec:java \
 
 ## Список задач
 
-В проекте **61 задача** (волны 1–6): 31 основная kata и 30 задач утренней разминки
-LeetCode.
+В проекте **71 задача** (волны 1–7): 31 основная kata, 30 задач утренней разминки
+LeetCode и 10 коротких Easy Kata на JCF/Stream API.
 
 | № | Kata | Тема | Ключевые навыки |
 |---|---|---|---|
@@ -377,6 +394,7 @@ LeetCode.
 | 30 | `Kata30_PermissionBitmaskEvaluator` | RBAC + ABAC | `EnumSet` как битовая маска, наследование ролей, DENY wins, условные правила, volatile-снимок без lock на чтении |
 | 31 | `Kata31_ResilientDataMapper` | Валидация импорта | Applicative `combine` с накоплением ошибок, короткозамыкающий `flatMap`, нормализация грязных данных |
 | 32–61 | `Warmup<Week>_<NN>_<Name>` | Morning Warm-Up | 30 задач LeetCode #1–#700: массивы, строки, биты, математика, связные списки, деревья; детальный трекер ниже |
+| 62–71 | `Easy01`–`Easy10` | Easy Kata | Идиоматичный JCF, Stream API, `Map.merge`/`computeIfAbsent`, `Comparator` chaining, `SequencedSet` Java 21 |
 
 ### Prod-Ready Craft (Collections, Streams & Domain Logic)
 
@@ -464,6 +482,31 @@ mvn test -Dtest='Warmup1*' -DuseSolution=true
 | [ ] | `Warmup4_08_BinaryTreeInorderTraversal` | #94 | Итеративный in-order на `ArrayDeque` |
 | [ ] | `Warmup4_09_SearchInBst` | #700 | Итеративный спуск по BST, O(h) |
 
+### Easy Kata: JCF & Functional Style (`Easy01` — `Easy10`)
+
+10 коротких задач на 5–10 минут ежедневной практики идиоматичного Java Collections
+Framework и Stream API. Пакет `dev.kata.easy`, эталоны — `dev.kata.solutions.easy`.
+Главное правило: вместо ручных циклов с мутацией индексов — `Stream`, `Map.merge`,
+`Map.computeIfAbsent`, `Collectors`, цепочки `Comparator`, `ArrayDeque` и
+`SequencedCollection` из Java 21. Возвращаемые коллекции неизменяемы.
+
+```bash
+mvn test -Dtest='Easy*' -DuseSolution=true
+```
+
+| ✓ | Kata | Тема | Ключевой приём |
+|---|---|---|---|
+| [ ] | `Easy01_FrequencyAndTopK` | Частоты и топ-K | `groupingBy(..., counting())`, `Map.Entry` comparator, `toLowerCase(Locale.ROOT)` |
+| [ ] | `Easy02_GroupAndTransform` | Группировка сотрудников | `groupingBy` + `mapping`/`collectingAndThen` + `averagingInt` |
+| [ ] | `Easy03_CollectionDiff` | Diff по id | `Set` индексов, декларативные фильтры за O(N + M), `List.copyOf` |
+| [ ] | `Easy04_InvertedIndex` | Обратный индекс тегов | `flatMap`, `groupingBy` с `LinkedHashSet`, пересечение множеств |
+| [ ] | `Easy05_MapMergeAndRollup` | Балансы | `HashMap` + `Map.merge(Integer::sum)` + `removeIf` |
+| [ ] | `Easy06_BalancedBrackets` | Скобки | `ArrayDeque` как стек + `Map.of` соответствий |
+| [ ] | `Easy07_LruCacheWithLinkedHashMap` | LRU-кэш | `LinkedHashMap(accessOrder=true)` + `removeEldestEntry` |
+| [ ] | `Easy08_ChunkingAndWindowing` | Chunk / zip | `IntStream.range`, `List.subList`, неизменяемые копии |
+| [ ] | `Easy09_SequencedHistoryTracker` | История просмотров | Java 21 `SequencedSet`: `LinkedHashSet.addFirst/removeLast` |
+| [ ] | `Easy10_MultiCriteriaSorting` | Сортировка задач | Цепочка `Comparator.comparing().thenComparing()`, `nullsLast`, `CASE_INSENSITIVE_ORDER` |
+
 ### Таблица прогресса
 
 Отмечайте выполненные задачи:
@@ -506,7 +549,8 @@ mvn test -Dtest='Warmup1*' -DuseSolution=true
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
 >
 > Прогресс по 30 задачам утренней разминки отмечайте в отдельном
-> [трекере Morning Warm-Up](#morning-warm-up-wave-6) выше.
+> [трекере Morning Warm-Up](#morning-warm-up-wave-6) выше, а по 10 Easy Kata — в
+> разделе Easy Kata выше.
 
 ---
 
