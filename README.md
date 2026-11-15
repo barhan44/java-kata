@@ -56,13 +56,19 @@ java-kata/
     │   │   └── Kata12_ConsistentHashingRouter.java
     │   ├── algorithms/
     │   │   ├── Kata04_RingBuffer.java
-    │   │   └── Kata13_BloomFilter.java
+    │   │   ├── Kata13_BloomFilter.java
+    │   │   ├── Kata16_HashedWheelTimer.java
+    │   │   └── Kata17_RadixUrlRouter.java
     │   ├── streams/
-    │   │   └── Kata05_CustomSpliterator.java
+    │   │   ├── Kata05_CustomSpliterator.java
+    │   │   └── Kata18_CustomStreamGatherer.java
     │   ├── memory/
-    │   │   └── Kata06_OffHeapByteBufferPool.java
+    │   │   ├── Kata06_OffHeapByteBufferPool.java
+    │   │   ├── Kata14_ArenaSlabAllocator.java
+    │   │   └── Kata15_ZeroCopyCsvParser.java
     │   ├── internals/
-    │   │   └── Kata07_MiniDependencyInjector.java
+    │   │   ├── Kata07_MiniDependencyInjector.java
+    │   │   └── Kata19_MethodHandleInterceptor.java
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -74,9 +80,15 @@ java-kata/
     │       ├── patterns/Kata12_ConsistentHashingRouterSolution.java
     │       ├── algorithms/Kata04_RingBufferSolution.java
     │       ├── algorithms/Kata13_BloomFilterSolution.java
+    │       ├── algorithms/Kata16_HashedWheelTimerSolution.java
+    │       ├── algorithms/Kata17_RadixUrlRouterSolution.java
     │       ├── streams/Kata05_CustomSpliteratorSolution.java
+    │       ├── streams/Kata18_CustomStreamGathererSolution.java
     │       ├── memory/Kata06_OffHeapByteBufferPoolSolution.java
-    │       └── internals/Kata07_MiniDependencyInjectorSolution.java
+    │       ├── memory/Kata14_ArenaSlabAllocatorSolution.java
+    │       ├── memory/Kata15_ZeroCopyCsvParserSolution.java
+    │       ├── internals/Kata07_MiniDependencyInjectorSolution.java
+    │       └── internals/Kata19_MethodHandleInterceptorSolution.java
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -89,13 +101,20 @@ java-kata/
         │   ├── patterns/Kata12_ConsistentHashingRouterTest.java
         │   ├── algorithms/Kata04_RingBufferTest.java
         │   ├── algorithms/Kata13_BloomFilterTest.java
+        │   ├── algorithms/Kata16_HashedWheelTimerTest.java
+        │   ├── algorithms/Kata17_RadixUrlRouterTest.java
         │   ├── streams/Kata05_CustomSpliteratorTest.java
+        │   ├── streams/Kata18_CustomStreamGathererTest.java
         │   ├── memory/Kata06_OffHeapByteBufferPoolTest.java
+        │   ├── memory/Kata14_ArenaSlabAllocatorTest.java
+        │   ├── memory/Kata15_ZeroCopyCsvParserTest.java
         │   ├── internals/Kata07_MiniDependencyInjectorTest.java
+        │   ├── internals/Kata19_MethodHandleInterceptorTest.java
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
         │       ├── RateLimiterBenchmark.java
+        │       ├── SlabAllocatorBenchmark.java
         │       ├── RingBufferBenchmark.java
         │       └── StripedCacheBenchmark.java
         └── resources/logback-test.xml
@@ -206,6 +225,11 @@ mvn test-compile exec:java \
 mvn test-compile exec:java \
   -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
   -Dexec.args="ConsistentHashing" -DuseSolution=true
+
+# Off-heap slab allocator vs heap-массивы (Kata 14)
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="SlabAllocator" -DuseSolution=true
 ```
 
 В IDE достаточно запустить `BenchmarkRunner#main` как обычное Java-приложение с VM-опцией
@@ -221,6 +245,7 @@ mvn test-compile exec:java \
 | `RingBufferBenchmark` | SPSC ring buffer vs `ArrayBlockingQueue`, producer/consumer groups | `Throughput` |
 | `StripedCacheBenchmark` | lock-striped кэш vs `Collections.synchronizedMap`, 90% чтений / 10% записей, 8 потоков | `Throughput`, `AverageTime` |
 | `ConsistentHashingBenchmark` | `route(key)` по кольцу (5 нод × 200 vnodes) vs modulo-baseline, 8 потоков, проверка нулевых аллокаций | `Throughput`, `AverageTime` |
+| `SlabAllocatorBenchmark` | off-heap `allocate/free` vs `new byte[64]` / `new long[8]`; `gc.alloc.rate.norm ≈ 0` у slab | `Throughput`, `AverageTime` |
 
 `BenchmarkRunner` подключает `GCProfiler`, поэтому в результатах есть
 `gc.alloc.rate.norm` — **байты на операцию**. Это ключевая метрика для katas про память:
@@ -264,6 +289,12 @@ mvn test-compile exec:java \
 | 11 | `Kata11_CircuitBreaker` | Отказоустойчивость | Кольцевое окно, три состояния, HALF_OPEN-гейт, инъекция часов, конкурентные переходы |
 | 12 | `Kata12_ConsistentHashingRouter` | Шардирование | Кольцо и виртуальные ноды, FNV-1a/MurmurHash3, copy-on-write снимок, минимизация миграции, zero-allocation hot path |
 | 13 | `Kata13_BloomFilter` | Вероятностные структуры | Расчёт `m`/`k`, Kirsch–Mitzenmacher, битовая упаковка в `long[]`, контроль false positive rate |
+| 14 | `Kata14_ArenaSlabAllocator` | Off-heap slab allocator | `Arena.ofShared`, `MemorySegment`, intrusive free-list, zero-GC, double-free protection |
+| 15 | `Kata15_ZeroCopyCsvParser` | Zero-copy парсинг | `MemorySegment`, callback-срезы, кавычки/`""`/CRLF, `parseLong` без `String` |
+| 16 | `Kata16_HashedWheelTimer` | Планировщик таймеров | Hashed wheel, O(1) schedule/cancel, `remainingRounds`, догоняющий тикер |
+| 17 | `Kata17_RadixUrlRouter` | HTTP-роутинг | Radix Tree, splitting узлов, `{param}`/`*wildcard`, приоритеты и backtracking |
+| 18 | `Kata18_CustomStreamGatherer` | Stream API internals | Собственный `StreamGatherer`, `Spliterators.AbstractSpliterator`, ленивость, окна/батчи |
+| 19 | `Kata19_MethodHandleInterceptor` | AOP-прокси | `Proxy`, `MethodHandle`, `privateLookupIn`, `invokeDefault`, кэш и цепочка интерсепторов |
 
 ### Таблица прогресса
 
@@ -284,6 +315,12 @@ mvn test-compile exec:java \
 | 11 CircuitBreaker | [ ] | [ ] | [ ] | — |
 | 12 ConsistentHashingRouter | [ ] | [ ] | [ ] | [ ] |
 | 13 BloomFilter | [ ] | [ ] | [ ] | — |
+| 14 ArenaSlabAllocator | [ ] | [ ] | [ ] | [ ] |
+| 15 ZeroCopyCsvParser | [ ] | [ ] | [ ] | — |
+| 16 HashedWheelTimer | [ ] | [ ] | [ ] | — |
+| 17 RadixUrlRouter | [ ] | [ ] | [ ] | — |
+| 18 CustomStreamGatherer | [ ] | [ ] | [ ] | — |
+| 19 MethodHandleInterceptor | [ ] | [ ] | [ ] | — |
 
 > «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
