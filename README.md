@@ -69,6 +69,15 @@ java-kata/
     │   ├── internals/
     │   │   ├── Kata07_MiniDependencyInjector.java
     │   │   └── Kata19_MethodHandleInterceptor.java
+    │   ├── storage/
+    │   │   ├── Kata20_WriteAheadLog.java
+    │   │   └── Kata21_LsmMemTableAndSstable.java
+    │   ├── distributed/
+    │   │   ├── Kata22_RaftLeaderElection.java
+    │   │   ├── Kata23_HybridLogicalClock.java
+    │   │   └── Kata24_OrSetCrdt.java
+    │   ├── networking/
+    │   │   └── Kata25_NioReactorEchoServer.java
     │   └── solutions/                              # эталоны, повторяют структуру пакетов
     │       ├── concurrency/Kata01_StripedLockCacheSolution.java
     │       ├── concurrency/Kata02_AsyncTaskBatcherSolution.java
@@ -88,7 +97,13 @@ java-kata/
     │       ├── memory/Kata14_ArenaSlabAllocatorSolution.java
     │       ├── memory/Kata15_ZeroCopyCsvParserSolution.java
     │       ├── internals/Kata07_MiniDependencyInjectorSolution.java
-    │       └── internals/Kata19_MethodHandleInterceptorSolution.java
+    │       ├── internals/Kata19_MethodHandleInterceptorSolution.java
+    │       ├── storage/Kata20_WriteAheadLogSolution.java
+    │       ├── storage/Kata21_LsmMemTableAndSstableSolution.java
+    │       ├── distributed/Kata22_RaftLeaderElectionSolution.java
+    │       ├── distributed/Kata23_HybridLogicalClockSolution.java
+    │       ├── distributed/Kata24_OrSetCrdtSolution.java
+    │       └── networking/Kata25_NioReactorEchoServerSolution.java
     └── test/
         ├── java/dev/kata/
         │   ├── concurrency/Kata01_StripedLockCacheTest.java
@@ -110,13 +125,20 @@ java-kata/
         │   ├── memory/Kata15_ZeroCopyCsvParserTest.java
         │   ├── internals/Kata07_MiniDependencyInjectorTest.java
         │   ├── internals/Kata19_MethodHandleInterceptorTest.java
+        │   ├── storage/Kata20_WriteAheadLogTest.java
+        │   ├── storage/Kata21_LsmMemTableAndSstableTest.java
+        │   ├── distributed/Kata22_RaftLeaderElectionTest.java
+        │   ├── distributed/Kata23_HybridLogicalClockTest.java
+        │   ├── distributed/Kata24_OrSetCrdtTest.java
+        │   ├── networking/Kata25_NioReactorEchoServerTest.java
         │   └── benchmarks/
         │       ├── BenchmarkRunner.java
         │       ├── ConsistentHashingBenchmark.java
         │       ├── RateLimiterBenchmark.java
         │       ├── SlabAllocatorBenchmark.java
         │       ├── RingBufferBenchmark.java
-        │       └── StripedCacheBenchmark.java
+        │       ├── StripedCacheBenchmark.java
+        │       └── WalAndHlcBenchmark.java
         └── resources/logback-test.xml
 ```
 
@@ -230,6 +252,11 @@ mvn test-compile exec:java \
 mvn test-compile exec:java \
   -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
   -Dexec.args="SlabAllocator" -DuseSolution=true
+
+# HLC zero-allocation и WAL append (Kata 20/23)
+mvn test-compile exec:java \
+  -Dexec.mainClass="dev.kata.benchmarks.BenchmarkRunner" \
+  -Dexec.args="WalAndHlc" -DuseSolution=true
 ```
 
 В IDE достаточно запустить `BenchmarkRunner#main` как обычное Java-приложение с VM-опцией
@@ -246,6 +273,7 @@ mvn test-compile exec:java \
 | `StripedCacheBenchmark` | lock-striped кэш vs `Collections.synchronizedMap`, 90% чтений / 10% записей, 8 потоков | `Throughput`, `AverageTime` |
 | `ConsistentHashingBenchmark` | `route(key)` по кольцу (5 нод × 200 vnodes) vs modulo-baseline, 8 потоков, проверка нулевых аллокаций | `Throughput`, `AverageTime` |
 | `SlabAllocatorBenchmark` | off-heap `allocate/free` vs `new byte[64]` / `new long[8]`; `gc.alloc.rate.norm ≈ 0` у slab | `Throughput`, `AverageTime` |
+| `WalAndHlcBenchmark` | HLC `nowPacked`/`updatePacked` (0 B/op) и WAL `append` с `force(false)` | `Throughput`, `AverageTime` |
 
 `BenchmarkRunner` подключает `GCProfiler`, поэтому в результатах есть
 `gc.alloc.rate.norm` — **байты на операцию**. Это ключевая метрика для katas про память:
@@ -274,6 +302,8 @@ mvn test-compile exec:java \
 
 ## Список задач
 
+В проекте **25 задач** (волны 1–4).
+
 | № | Kata | Тема | Ключевые навыки |
 |---|---|---|---|
 | 01 | `Kata01_StripedLockCache` | Потокобезопасный кэш | Lock striping, `ReadWriteLock`, TTL на `nanoTime`, lazy expiration, cache stampede, `LongAdder` |
@@ -295,6 +325,12 @@ mvn test-compile exec:java \
 | 17 | `Kata17_RadixUrlRouter` | HTTP-роутинг | Radix Tree, splitting узлов, `{param}`/`*wildcard`, приоритеты и backtracking |
 | 18 | `Kata18_CustomStreamGatherer` | Stream API internals | Собственный `StreamGatherer`, `Spliterators.AbstractSpliterator`, ленивость, окна/батчи |
 | 19 | `Kata19_MethodHandleInterceptor` | AOP-прокси | `Proxy`, `MethodHandle`, `privateLookupIn`, `invokeDefault`, кэш и цепочка интерсепторов |
+| 20 | `Kata20_WriteAheadLog` | Write-Ahead Log | `FileChannel`, CRC32, torn writes, recovery, prefix compaction, монотонные LSN |
+| 21 | `Kata21_LsmMemTableAndSstable` | LSM-Tree | MemTable, Tombstone, SSTable, Sparse Index, flush, multi-level lookup |
+| 22 | `Kata22_RaftLeaderElection` | Консенсус Raft | Роли, термы, votedFor, majority, Log Up-to-Date, split-vote, step-down |
+| 23 | `Kata23_HybridLogicalClock` | Распределённое время | HLC, логический счётчик, clock skew, 48/16-битная упаковка, zero-allocation |
+| 24 | `Kata24_OrSetCrdt` | CRDT | OR-Set, уникальные теги, Add-Wins, коммутативность/ассоциативность/идемпотентность |
+| 25 | `Kata25_NioReactorEchoServer` | Сетевой event loop | `Selector`, non-blocking I/O, framing, `OP_WRITE` backpressure, graceful close |
 
 ### Таблица прогресса
 
@@ -321,6 +357,12 @@ mvn test-compile exec:java \
 | 17 RadixUrlRouter | [ ] | [ ] | [ ] | — |
 | 18 CustomStreamGatherer | [ ] | [ ] | [ ] | — |
 | 19 MethodHandleInterceptor | [ ] | [ ] | [ ] | — |
+| 20 WriteAheadLog | [ ] | [ ] | [ ] | [ ] |
+| 21 LsmMemTableAndSstable | [ ] | [ ] | [ ] | — |
+| 22 RaftLeaderElection | [ ] | [ ] | [ ] | — |
+| 23 HybridLogicalClock | [ ] | [ ] | [ ] | [ ] |
+| 24 OrSetCrdt | [ ] | [ ] | [ ] | — |
+| 25 NioReactorEchoServer | [ ] | [ ] | [ ] | — |
 
 > «Тесты зелёные» означает, что ваша реализация в файле заготовки проходит
 > `mvn test -Dtest='KataXX*'` **без** `-DuseSolution=true`.
